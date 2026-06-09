@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Study Together — Tu & Yash</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #111820;
+    --desk: #1e1410;
+    --desk-top: #2a1c10;
+    --window-frame: #1a2d42;
+    --window-inner: #0a1520;
+    --text: #d0e4f4;
+    --text-muted: #5a7a95;
+    --text-dim: #3a5570;
+    --purple: #7F77DD;
+    --purple-bg: #1e1a3a;
+    --green: #1D9E75;
+    --green-bg: #0f2218;
+    --accent-purple: #534AB7;
+    --rain: rgba(140,190,255,0.18);
+    --glass: rgba(255,255,255,0.04);
+    --glass-border: rgba(100,160,220,0.12);
+  }
+
+  body {
+    background: var(--bg);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    color: var(--text);
+    padding: 16px;
+  }
+
+  .room {
+    width: 100%;
+    max-width: 480px;
+    border-radius: 20px;
+    overflow: hidden;
+    border: 1px solid var(--glass-border);
+    background: var(--bg);
+    position: relative;
+  }
+
+  canvas#rain {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .window-section {
+    background: var(--window-frame);
+    padding: 16px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .window-pane {
+    border: 3px solid #243d57;
+    border-radius: 4px;
+    background: var(--window-inner);
+    overflow: hidden;
+    position: relative;
+    height: 130px;
+  }
+
+  .wp-h { position: absolute; top: 50%; left: 0; right: 0; height: 2px; background: #243d57; transform: translateY(-50%); }
+  .wp-v { position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; background: #243d57; transform: translateX(-50%); }
+
+  .sky { height: 70px; background: #060e18; position: relative; overflow: hidden; }
+  .moon { position: absolute; top: 10px; right: 55px; width: 20px; height: 20px; border-radius: 50%; background: #b8cfe0; }
+  .cloud { position: absolute; border-radius: 20px; background: #141f2b; }
+  .city-line { height: 60px; background: #060e18; display: flex; align-items: flex-end; }
+  .b { background: #0d1a28; margin-right: 2px; }
+
+  .window-rain {
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    pointer-events: none; overflow: hidden;
+  }
+
+  .wr { position: absolute; width: 1px; background: rgba(140,190,255,0.3); border-radius: 1px; animation: fall linear infinite; }
+  @keyframes fall { to { transform: translateY(200px); opacity: 0; } }
+
+  .desk-section {
+    background: var(--desk);
+    position: relative;
+    z-index: 2;
+    padding-bottom: 4px;
+  }
+
+  .desk-edge {
+    height: 14px;
+    background: var(--desk-top);
+    border-top: 2px solid #3a2010;
+  }
+
+  .desk-decor {
+    padding: 6px 20px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+
+  .books { display: flex; gap: 3px; align-items: flex-end; }
+  .bk { width: 9px; border-radius: 1px 1px 0 0; }
+
+  .lamp-wrap { position: relative; display: flex; align-items: flex-end; gap: 0; }
+  .lamp-base { width: 20px; height: 4px; background: #4a3020; border-radius: 2px; }
+  .lamp-pole { width: 5px; height: 30px; background: #4a3020; border-radius: 2px; margin: 0 auto; }
+  .lamp-shade { width: 22px; height: 10px; background: #6a4828; border-radius: 2px 2px 6px 6px; }
+  .lamp-glow {
+    position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
+    width: 50px; height: 25px;
+    background: radial-gradient(ellipse, rgba(255,210,80,0.15) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+
+  .main-content {
+    padding: 16px 20px 20px;
+    position: relative;
+    z-index: 2;
+    background: var(--bg);
+  }
+
+  .top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+
+  .room-id { font-size: 11px; color: var(--text-dim); letter-spacing: 0.5px; }
+  .weather { font-size: 11px; color: var(--text-dim); }
+
+  .avatars {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    gap: 32px;
+    margin-bottom: 16px;
+  }
+
+  .av-card { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+
+  .av-circle {
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 34px;
+    border: 2.5px solid transparent;
+    position: relative;
+    transition: all 0.4s;
+  }
+
+  .av-circle.girl { background: var(--purple-bg); border-color: var(--purple); }
+  .av-circle.boy  { background: var(--green-bg);  border-color: var(--green); }
+
+  .av-circle.active { animation: glow 2.4s ease-in-out infinite; }
+  .av-circle.girl.active { box-shadow: 0 0 16px rgba(127,119,221,0.3); }
+  .av-circle.boy.active  { box-shadow: 0 0 16px rgba(29,158,117,0.3); }
+  @keyframes glow { 0%,100%{transform:scale(1);} 50%{transform:scale(1.06);} }
+  .av-circle.idle { opacity: 0.5; filter: grayscale(0.6); }
+
+  .status-dot {
+    width: 11px; height: 11px; border-radius: 50%;
+    position: absolute; bottom: 2px; right: 2px;
+    border: 2px solid var(--bg);
+    transition: background 0.4s;
+  }
+  .dot-live { background: #22c55e; }
+  .dot-off  { background: #334455; }
+
+  .av-name { font-size: 12px; font-weight: 500; color: var(--text); }
+  .av-city { font-size: 10px; color: var(--text-dim); }
+  .av-vibe { font-size: 10px; color: var(--text-muted); font-style: italic; text-align: center; max-width: 88px; min-height: 14px; }
+
+  .sync-center {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 3px; padding-bottom: 8px;
+  }
+  .sync-icon { font-size: 20px; }
+  .sync-label { font-size: 10px; color: var(--text-dim); }
+
+  .timer {
+    text-align: center;
+    font-size: 58px;
+    font-weight: 300;
+    color: var(--text);
+    letter-spacing: -2px;
+    margin: 4px 0 10px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .progress {
+    height: 4px; border-radius: 99px;
+    background: rgba(255,255,255,0.07);
+    margin-bottom: 10px; overflow: hidden;
+  }
+  .progress-bar {
+    height: 100%; border-radius: 99px;
+    background: linear-gradient(90deg, var(--accent-purple), var(--green));
+    transition: width 1s linear;
+  }
+
+  .sess-info {
+    text-align: center;
+    font-size: 11px; color: var(--text-dim);
+    margin-bottom: 12px;
+  }
+
+  .presets {
+    display: flex; gap: 6px; justify-content: center;
+    flex-wrap: wrap; margin-bottom: 14px;
+  }
+
+  .preset {
+    font-size: 11px; padding: 5px 13px;
+    border-radius: 20px;
+    border: 1px solid rgba(100,150,200,0.15);
+    background: var(--glass);
+    color: var(--text-muted);
+    cursor: pointer; transition: all 0.15s;
+  }
+  .preset:hover { border-color: rgba(100,150,255,0.3); color: var(--text); }
+  .preset.active { background: var(--accent-purple); color: white; border-color: var(--accent-purple); }
+
+  .controls {
+    display: flex; gap: 10px; justify-content: center;
+    margin-bottom: 12px;
+  }
+
+  .btn-start {
+    padding: 10px 30px; border-radius: 10px;
+    background: var(--accent-purple); color: white;
+    border: none; font-size: 14px; font-weight: 500;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .btn-start:hover { background: #3C3489; transform: translateY(-1px); }
+  .btn-start:active { transform: scale(0.97); }
+
+  .btn-reset {
+    padding: 10px 18px; border-radius: 10px;
+    background: var(--glass); color: var(--text-muted);
+    border: 1px solid var(--glass-border);
+    font-size: 14px; cursor: pointer; transition: all 0.15s;
+  }
+  .btn-reset:hover { background: rgba(255,255,255,0.08); color: var(--text); }
+
+  .done-banner {
+    background: rgba(29,158,117,0.1);
+    border: 1px solid rgba(29,158,117,0.25);
+    border-radius: 12px;
+    padding: 14px; text-align: center;
+    margin-bottom: 12px;
+    display: none;
+  }
+  .done-banner h3 { font-size: 14px; font-weight: 500; color: var(--text); margin-bottom: 4px; }
+  .done-banner p  { font-size: 12px; color: var(--text-muted); }
+  .btn-next {
+    margin-top: 10px; padding: 8px 20px;
+    border-radius: 8px; background: var(--green);
+    color: white; border: none; font-size: 12px;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .btn-next:hover { background: #0F6E56; }
+
+  .footer {
+    display: flex; align-items: center; justify-content: center;
+    gap: 8px; padding-top: 4px;
+  }
+  .room-code {
+    font-size: 11px; font-family: monospace;
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    border-radius: 6px; padding: 4px 10px;
+    color: var(--text-dim);
+  }
+  .btn-sm {
+    font-size: 11px; padding: 4px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--glass-border);
+    background: transparent; color: var(--text-dim);
+    cursor: pointer; transition: all 0.15s;
+  }
+  .btn-sm:hover { background: var(--glass); color: var(--text); }
+
+  .sync-status-bar {
+    text-align: center;
+    font-size: 10px; color: var(--text-dim);
+    margin-bottom: 10px;
+    min-height: 14px;
+  }
+  .sync-live { color: #22c55e; }
+
+  @media (max-width: 400px) {
+    .timer { font-size: 46px; }
+    .av-circle { width: 60px; height: 60px; font-size: 28px; }
+  }
+</style>
+</head>
+<body>
+<div class="room">
+  <canvas id="rain"></canvas>
+
+  <div class="window-section">
+    <div class="window-pane">
+      <div class="wp-h"></div>
+      <div class="wp-v"></div>
+      <div class="sky">
+        <div class="moon"></div>
+        <div class="cloud" style="width:48px;height:13px;top:18px;left:16px;opacity:0.7"></div>
+        <div class="cloud" style="width:32px;height:9px;top:28px;left:52px;opacity:0.5"></div>
+        <div class="cloud" style="width:56px;height:15px;top:12px;right:12px;opacity:0.8"></div>
+      </div>
+      <div class="city-line">
+        <div class="b" style="width:16px;height:18px"></div>
+        <div class="b" style="width:10px;height:26px"></div>
+        <div class="b" style="width:20px;height:14px"></div>
+        <div class="b" style="width:8px;height:22px"></div>
+        <div class="b" style="width:26px;height:12px"></div>
+        <div class="b" style="width:12px;height:20px"></div>
+        <div class="b" style="width:18px;height:16px"></div>
+        <div class="b" style="width:14px;height:24px"></div>
+        <div class="b" style="width:22px;height:10px"></div>
+        <div class="b" style="width:10px;height:18px"></div>
+        <div class="b" style="width:16px;height:22px"></div>
+        <div class="b" style="width:12px;height:16px"></div>
+      </div>
+      <div class="window-rain" id="winRain"></div>
+    </div>
+  </div>
+
+  <div class="desk-section">
+    <div class="desk-edge"></div>
+    <div class="desk-decor">
+      <div class="books">
+        <div class="bk" style="height:36px;background:#5a2a1a"></div>
+        <div class="bk" style="height:28px;background:#1a3a5a"></div>
+        <div class="bk" style="height:40px;background:#2a4a1a"></div>
+        <div class="bk" style="height:26px;background:#5a4a1a"></div>
+        <div class="bk" style="height:34px;background:#3a1a5a"></div>
+        <div class="bk" style="height:24px;background:#1a4a3a"></div>
+        <div class="bk" style="height:38px;background:#4a2a1a"></div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:0;position:relative">
+        <div class="lamp-shade"></div>
+        <div class="lamp-pole"></div>
+        <div class="lamp-base"></div>
+        <div class="lamp-glow"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <div class="top-bar">
+      <span class="room-id" id="roomId">Room #—</span>
+      <span class="weather">🌧️ Rainy night</span>
+    </div>
+
+    <div class="sync-status-bar" id="syncBar">Connecting...</div>
+
+    <div class="avatars">
+      <div class="av-card">
+        <div class="av-circle girl idle" id="avYou">
+          <span>👩‍💻</span>
+          <span class="status-dot dot-off" id="dotYou"></span>
+        </div>
+        <div class="av-name">Tu</div>
+        <div class="av-city">Surat, Gujarat</div>
+        <div class="av-vibe" id="vibeYou">Tayaar hoon...</div>
+      </div>
+
+      <div class="sync-center">
+        <div class="sync-icon" id="syncIco">⚡</div>
+        <div class="sync-label" id="syncLbl">Ready</div>
+      </div>
+
+      <div class="av-card">
+        <div class="av-circle boy idle" id="avYash">
+          <span>👨‍💻</span>
+          <span class="status-dot dot-off" id="dotYash"></span>
+        </div>
+        <div class="av-name">Yash</div>
+        <div class="av-city">Nashik, Maharashtra</div>
+        <div class="av-vibe" id="vibeYash">Join hoga abhi...</div>
+      </div>
+    </div>
+
+    <div class="timer" id="timerEl">25:00</div>
+
+    <div class="progress">
+      <div class="progress-bar" id="progBar" style="width:100%"></div>
+    </div>
+
+    <div class="sess-info" id="sessEl">Session 1 • Pomodoro 25 min</div>
+
+    <div class="presets">
+      <button class="preset active" onclick="setPre(25,'Pomodoro 25 min',this)">25 min</button>
+      <button class="preset" onclick="setPre(45,'Deep work 45 min',this)">45 min</button>
+      <button class="preset" onclick="setPre(60,'1 ghanta',this)">1 hr</button>
+      <button class="preset" onclick="setPre(90,'1.5 hr grind',this)">1.5 hr</button>
+      <button class="preset" onclick="setPre(120,'2 ghante',this)">2 hr</button>
+    </div>
+
+    <div class="controls">
+      <button class="btn-start" id="mainBtn" onclick="toggle()">▶ Start karo</button>
+      <button class="btn-reset" onclick="doReset()">↺ Reset</button>
+    </div>
+
+    <div class="done-banner" id="doneBanner">
+      <h3>🎉 Session complete! Dono ne kiya!</h3>
+      <p>Break lo — chai piyo, thoda stretch karo ☕</p>
+      <button class="btn-next" onclick="nextSess()">Agla session →</button>
+    </div>
+
+    <div class="footer">
+      <span class="room-code" id="rcDisplay">STUDY-????</span>
+      <button class="btn-sm" onclick="copyLink()">🔗 Link copy karo</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Room / sync via URL + localStorage polling ──
+const params = new URLSearchParams(location.search);
+let roomCode = params.get('room');
+if (!roomCode) {
+  roomCode = 'STUDY-' + Math.random().toString(36).substr(2,4).toUpperCase();
+  
+}
+document.getElementById('roomId').textContent = 'Room ' + roomCode;
+document.getElementById('rcDisplay').textContent = roomCode;
+
+function storageKey(k) { return roomCode + ':' + k; }
+
+function broadcastState(state) { try {
+  try { localStorage.setItem(storageKey('state'), JSON.stringify({...state, ts: Date.now()})); } catch(e){}
+}
+
+function readState() {
+  try { return JSON.parse(localStorage.getItem(storageKey('state'))); } catch(e){ return null; }
+}
+
+// ── Timer state ──
+let totalSecs = 25 * 60;
+let startedAt = null;  // epoch ms when timer was started
+let pausedAt = null;   // epoch ms when paused (null if running)
+let pausedRemaining = totalSecs;
+let session = 1;
+let preLabel = 'Pomodoro 25 min';
+let finished = false;
+
+function getRemainingNow() {
+  if (startedAt === null) return pausedRemaining;
+  if (pausedAt !== null) return pausedRemaining;
+  const elapsed = Math.floor((Date.now() - startedAt) / 1000);
+  return Math.max(0, totalSecs - elapsed);
+}
+
+function isRunning() { return startedAt !== null && pausedAt === null; }
+
+function fmt(s) {
+  s = Math.max(0, s);
+  return String(Math.floor(s/60)).padStart(2,'0') + ':' + String(s%60).padStart(2,'0');
+}
+function rnd(a) { return a[Math.floor(Math.random()*a.length)]; }
+
+const vibesOn  = ['Focus mode ON 🎯','Zone mein hoon!','Chhod nahi rahi!','Padh rahi hoon!','Aag laga di 🔥'];
+const vibesOnY = ['Dimag laga raha hoon!','Padh raha hoon!','Zone mein hoon!','Full focus!','Aag laga di 🔥'];
+const vibesOff = ['Tayaar hoon...','Break pe hoon','Thodi der mein...','Ready hoon'];
+const vibesOffY= ['Join kar raha hoon...','Abhi aata hoon','Break pe hoon','Ready'];
+
+function setAvatarState(on) {
+  ['You','Yash'].forEach(n => {
+    const av  = document.getElementById('av'+n);
+    const dot = document.getElementById('dot'+n);
+    if (on) {
+      av.classList.add('active'); av.classList.remove('idle');
+      dot.className = 'status-dot dot-live';
+    } else {
+      av.classList.remove('active'); av.classList.add('idle');
+      dot.className = 'status-dot dot-off';
+    }
+  });
+  document.getElementById('vibeYou').textContent  = on ? rnd(vibesOn)  : rnd(vibesOff);
+  document.getElementById('vibeYash').textContent = on ? rnd(vibesOnY) : rnd(vibesOffY);
+  document.getElementById('syncIco').textContent  = on ? '🔗' : '⚡';
+  document.getElementById('syncLbl').textContent  = on ? 'In sync!' : 'Paused';
+}
+
+function renderTimer() {
+  const rem = getRemainingNow();
+  document.getElementById('timerEl').textContent = fmt(rem);
+  document.getElementById('progBar').style.width = Math.round((rem/totalSecs)*100) + '%';
+  if (rem <= 0 && !finished) onFinish();
+}
+
+function onFinish() {
+  finished = true;
+  startedAt = null; pausedAt = null; pausedRemaining = 0;
+  setAvatarState(false);
+  document.getElementById('doneBanner').style.display = 'block';
+  document.getElementById('mainBtn').textContent = '▶ Start karo';
+  document.getElementById('vibeYou').textContent  = 'Done! Proud of you 💜';
+  document.getElementById('vibeYash').textContent = 'Done! Sahi kiya bhai 💚';
+  document.getElementById('syncIco').textContent  = '✅';
+  document.getElementById('syncLbl').textContent  = 'Complete!';
+  broadcastState({ action:'finish', session });
+}
+
+// Main loop
+setInterval(() => {
+  renderTimer();
+  // Poll localStorage for remote updates
+  const s = readState();
+  if (s && s.ts && (Date.now() - s.ts < 3000)) {
+    if (s.action === 'start' && !isRunning() && !finished) {
+      startedAt = s.startedAt;
+      pausedAt = null;
+      pausedRemaining = totalSecs;
+      totalSecs = s.totalSecs;
+      setAvatarState(true);
+      document.getElementById('mainBtn').textContent = '⏸ Pause karo';
+      document.getElementById('syncBar').innerHTML = '<span class="sync-live">● Yash ne start kiya — sync ho gaya!</span>';
+      setTimeout(() => { document.getElementById('syncBar').textContent = ''; }, 3000);
+    } else if (s.action === 'pause' && isRunning()) {
+      pausedAt = s.pausedAt;
+      pausedRemaining = s.pausedRemaining;
+      setAvatarState(false);
+      document.getElementById('mainBtn').textContent = '▶ Resume karo';
+      document.getElementById('syncBar').innerHTML = '<span style="color:#EF9F27">● Yash ne pause kiya</span>';
+      setTimeout(() => { document.getElementById('syncBar').textContent = ''; }, 3000);
+    } else if (s.action === 'reset') {
+      applyReset(s.totalSecs, s.preLabel, s.session);
+      document.getElementById('syncBar').innerHTML = '<span style="color:#EF9F27">● Yash ne reset kiya</span>';
+      setTimeout(() => { document.getElementById('syncBar').textContent = ''; }, 3000);
+    }
+  }
+}, 500);
+
+function toggle() {
+  if (finished) return;
+  if (!isRunning()) {
+    // Start / Resume
+    if (pausedAt !== null) {
+      // resuming from pause
+      startedAt = Date.now() - (totalSecs - pausedRemaining) * 1000;
+      pausedAt = null;
+    } else {
+      startedAt = Date.now();
+      pausedAt = null;
+      pausedRemaining = totalSecs;
+    }
+    setAvatarState(true);
+    document.getElementById('mainBtn').textContent = '⏸ Pause karo';
+    broadcastState({ action:'start', startedAt, totalSecs, session });
+    document.getElementById('syncBar').innerHTML = '<span class="sync-live">● Timer sync ho gaya dono ke liye!</span>';
+    setTimeout(() => { document.getElementById('syncBar').textContent = ''; }, 3000);
+  } else {
+    // Pause
+    pausedAt = Date.now();
+    pausedRemaining = getRemainingNow();
+    startedAt = null;
+    setAvatarState(false);
+    document.getElementById('mainBtn').textContent = '▶ Resume karo';
+    broadcastState({ action:'pause', pausedAt, pausedRemaining, session });
+  }
+}
+
+function applyReset(tot, lbl, sess) {
+  startedAt = null; pausedAt = null;
+  totalSecs = tot; pausedRemaining = tot;
+  session = sess || 1; preLabel = lbl || preLabel; finished = false;
+  renderTimer();
+  setAvatarState(false);
+  document.getElementById('mainBtn').textContent = '▶ Start karo';
+  document.getElementById('doneBanner').style.display = 'none';
+  document.getElementById('sessEl').textContent = 'Session ' + session + ' • ' + preLabel;
+}
+
+function doReset() {
+  applyReset(totalSecs, preLabel, session);
+  broadcastState({ action:'reset', totalSecs, preLabel, session });
+}
+
+function nextSess() {
+  session++;
+  applyReset(totalSecs, preLabel, session);
+  broadcastState({ action:'reset', totalSecs, preLabel, session });
+}
+
+function setPre(mins, lbl, el) {
+  applyReset(mins*60, lbl, session);
+  document.querySelectorAll('.preset').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  broadcastState({ action:'reset', totalSecs: mins*60, preLabel: lbl, session });
+}
+
+function copyLink() {
+  const url = location.href;
+  navigator.clipboard.writeText(url).catch(()=>{});
+  const btn = document.querySelector('.btn-sm');
+  btn.textContent = '✓ Link copy ho gaya!';
+  setTimeout(() => { btn.textContent = '🔗 Link copy karo'; }, 2000);
+}
+
+// BroadcastChannel for same-device sync (works in preview too)
+try {
+  const bc = new BroadcastChannel(roomCode);
+  bc.onmessage = (e) => {
+    const s = e.data;
+    if (!s || !s.action) return;
+    handleRemoteState(s);
+  };
+} catch(e){}
+
+function handleRemoteState(s) {
+  if (s.action === 'start' && !isRunning() && !finished) {
+    startedAt = s.startedAt;
+    pausedAt = null;
+    totalSecs = s.totalSecs;
+    pausedRemaining = totalSecs;
+    setAvatarState(true);
+    document.getElementById('mainBtn').textContent = '⏸ Pause karo';
+    document.getElementById('syncBar').innerHTML = '<span class="sync-live">● Sync ho gaya!</span>';
+    setTimeout(() => { document.getElementById('syncBar').textContent = ''; }, 3000);
+  } else if (s.action === 'pause' && isRunning()) {
+    pausedAt = s.pausedAt;
+    pausedRemaining = s.pausedRemaining;
+    startedAt = null;
+    setAvatarState(false);
+    document.getElementById('mainBtn').textContent = '▶ Resume karo';
+  } else if (s.action === 'reset') {
+    applyReset(s.totalSecs, s.preLabel, s.session);
+  }
+}
+
+// ── Rain canvas ──
+const canvas = document.getElementById('rain');
+const ctx = canvas.getContext('2d');
+let drops = [];
+function initRain() {
+  canvas.width  = canvas.offsetWidth;
+  canvas.height = canvas.offsetHeight;
+  drops = Array.from({length:90}, () => ({
+    x: Math.random() * canvas.width,
+    y: Math.random() * canvas.height,
+    len: Math.random()*14+7,
+    speed: Math.random()*3+2,
+    op: Math.random()*0.2+0.07
+  }));
+}
+function drawRain() {
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  drops.forEach(d => {
+    ctx.beginPath();
+    ctx.moveTo(d.x, d.y);
+    ctx.lineTo(d.x-0.8, d.y+d.len);
+    ctx.strokeStyle = `rgba(140,190,255,${d.op})`;
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+    d.y += d.speed;
+    if (d.y > canvas.height) { d.y = -d.len; d.x = Math.random()*canvas.width; }
+  });
+  requestAnimationFrame(drawRain);
+}
+
+// Window pane rain streaks
+function addWindowRain() {
+  const wr = document.getElementById('winRain');
+  for(let i=0;i<18;i++){
+    const s = document.createElement('div');
+    s.className = 'wr';
+    s.style.cssText = `left:${Math.random()*100}%;height:${Math.random()*12+6}px;animation-duration:${Math.random()*0.5+0.5}s;animation-delay:${Math.random()*1}s;top:${Math.random()*60}px;`;
+    wr.appendChild(s);
+  }
+}
+
+setTimeout(() => { initRain(); drawRain(); addWindowRain(); }, 80);
+window.addEventListener('resize', initRain);
+
+renderTimer();
+document.getElementById('syncBar').textContent = 'Link share karo — saath mein padho 🔗';
+setTimeout(()=>{ document.getElementById('syncBar').textContent=''; }, 4000);
+</script>
+</body>
+</html>
